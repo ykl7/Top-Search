@@ -1,4 +1,5 @@
 import re
+import math
 
 class Rank:
 
@@ -8,7 +9,11 @@ class Rank:
 		self.regdex = self.regIndex()
 		self.tf = {}
 		self.df = {}
-
+		self.idf = {}
+		self.totalIndex = self.execute()
+		self.vectors = self.vectorize()
+		self.mags = self.magnitudes(self.file_list)
+		self.populateScores()
 
 	def file_processing(self):
 		terms = {}
@@ -55,4 +60,55 @@ class Rank:
 					total_index[word] = {filename: indie_indices[filename][word]}
 		return total_index
 
+	def vectorize(self):
+		vectors = {}
+		for filename in self.file_list:
+			vectors[filename] = [len(self.regdex[filename][word]) for word in self.regdex[filename].keys()]
+		return vectors
 
+	def document_frequency(self, term):
+		if term in self.totalIndex.keys():
+			return len(self.totalIndex[term].keys()) 
+		else:
+			return 0
+
+	def collection_size(self):
+		return len(self.file_list)
+
+	# check score calculation again, lambda function might be wrong
+	def magnitudes(self, documents):
+		mags = {}
+		for document in documents:
+			mags[document] = pow(sum(map(lambda x: x**2, self.vectors[document])), .5)
+		return mags
+
+	def term_frequency(self, term, document):
+		return self.tf[document][term]/self.mags[document] if term in self.tf[document].keys() else 0
+
+	def populateScores(self):
+		for filename in self.file_list:
+			for term in self.getUniques():
+				self.tf[filename][term] = self.term_frequency(term, filename)
+				if term in self.df.keys():
+					self.idf[term] = self.idf_func(self.collection_size(), self.df[term]) 
+				else:
+					self.idf[term] = 0
+		return self.df, self.tf, self.idf
+
+	def idf_func(self, N, N_t):
+		if N_t != 0:
+			return math.log(N/N_t)
+		else:
+		 	return 0
+
+	def generateScore(self, term, document):
+		return self.tf[document][term] * self.idf[term]
+
+	def execute(self):
+		return self.fullIndex()
+
+	def regIndex(self):
+		return self.make_indices(self.file_processing)
+
+	def getUniques(self):
+		return self.totalIndex.keys()
