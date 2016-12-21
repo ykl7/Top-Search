@@ -60,11 +60,19 @@ class Search:
 		results = [x[1] for x in results]
 		return results
 
-	def one_word_query(self, word):
+	def one_word_search(self, word):
 		pattern = re.compile('[\W_]+')
 		word = pattern.sub(' ',word)
 		if word in self.invertedIndex.keys():
 			return self.rankResults([filename for filename in self.invertedIndex[word].keys()], word)
 		else:
 			return []
-			
+
+	def free_text_query(self, string):
+		pattern = re.compile('[\W_]+')
+		string = pattern.sub(' ',string)
+		result = []
+		for word in string.split():
+			result += self.one_word_query(word)
+		return self.rankResults(list(set(result)), string)
+
