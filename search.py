@@ -68,11 +68,29 @@ class Search:
 		else:
 			return []
 
-	def free_text_query(self, string):
+	def free_text_search(self, string):
 		pattern = re.compile('[\W_]+')
 		string = pattern.sub(' ',string)
 		result = []
 		for word in string.split():
 			result += self.one_word_query(word)
 		return self.rankResults(list(set(result)), string)
+
+	def phrase_search(self, string):
+		pattern = re.compile('[\W_]+')
+		string = pattern.sub(' ',string)
+		listOfLists, result = [],[]
+		for word in string.split():
+			listOfLists.append(self.one_word_query(word))
+		setted = set(listOfLists[0]).intersection(*listOfLists)
+		for filename in setted:
+			temp = []
+			for word in string.split():
+				temp.append(self.invertedIndex[word][filename][:])
+			for i in range(len(temp)):
+				for ind in range(len(temp[i])):
+					temp[i][ind] -= i
+			if set(temp[0]).intersection(*temp):
+				result.append(filename)
+		return self.rankResults(result, string)
 
