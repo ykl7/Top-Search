@@ -51,3 +51,11 @@ class Search:
 		tf = [x/magnitude for x in freq]
 		final = [tf[i]*queryidf[i] for i in range(len(self.index.getUniques()))]
 		return final
+
+	def rankResults(self, resultDocs, query):
+		vectors = self.make_vectors(resultDocs)
+		queryVec = self.query_vec(query)]
+		results = [[self.dotProduct(vectors[result], queryVec), result] for result in resultDocs]
+		results.sort(key=lambda x: x[0])
+		results = [x[1] for x in results]
+		return results
